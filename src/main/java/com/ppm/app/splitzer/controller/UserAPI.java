@@ -1,7 +1,7 @@
 package com.ppm.app.splitzer.controller;
 
 import com.ppm.app.splitzer.model.User;
-import com.ppm.app.splitzer.repository.UserRepository;
+import com.ppm.app.splitzer.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;

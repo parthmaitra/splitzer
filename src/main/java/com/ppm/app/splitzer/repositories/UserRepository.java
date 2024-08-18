@@ -1,4 +1,4 @@
-package com.ppm.app.splitzer.repository;
+package com.ppm.app.splitzer.repositories;
 
 import com.ppm.app.splitzer.model.User;
 import org.springframework.data.mongodb.repository.MongoRepository;
