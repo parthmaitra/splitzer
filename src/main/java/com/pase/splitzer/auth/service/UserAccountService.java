@@ -16,9 +16,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserAccountService {
@@ -30,11 +32,13 @@ public class UserAccountService {
 	@Transactional
 	public AppUser register(String username, String password, String name, String email, String pictureUrl) {
 		if (password.getBytes(StandardCharsets.UTF_8).length > 72) {
+			log.warn("Registration rejected for username '{}': password too long", username);
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
 					"Password must not exceed 72 UTF-8 bytes");
 		}
 		String normalizedUsername = normalizeUsername(username);
 		if (users.existsByUsername(normalizedUsername)) {
+			log.warn("Registration rejected: username '{}' already exists", normalizedUsername);
 			throw new ResponseStatusException(HttpStatus.CONFLICT, "Username is already registered");
 		}
 
@@ -42,12 +46,14 @@ public class UserAccountService {
 				? null
 				: email.trim().toLowerCase(Locale.ROOT);
 		if (normalizedEmail != null && profiles.existsByEmail(normalizedEmail)) {
+			log.warn("Registration rejected for username '{}': email already exists", normalizedUsername);
 			throw new ResponseStatusException(HttpStatus.CONFLICT, "Email is already registered");
 		}
 
 		AppUser user = users.save(new AppUser(normalizedUsername, passwordEncoder.encode(password)));
 		profiles.save(new UserProfile(user, normalizeOptional(name), normalizedEmail, normalizeOptional(pictureUrl)));
-		return user;
+				log.info("Registered user '{}' with id {} and status {}", user.getUsername(), user.getId(), user.getStatus());
+				return user;
 	}
 
 	@Transactional(readOnly = true)
@@ -70,8 +76,12 @@ public class UserAccountService {
 	@Transactional
 	public UserSummary approveUser(Long userId) {
 		AppUser user = users.findById(userId)
-				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+				.orElseThrow(() -> {
+					log.warn("Approval failed: user id {} not found", userId);
+					return new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
+				});
 		user.approve();
+		log.info("Approved user '{}' (id {})", user.getUsername(), userId);
 		UserProfile profile = user.getProfile();
 		return new UserSummary(
 				user.getId(),

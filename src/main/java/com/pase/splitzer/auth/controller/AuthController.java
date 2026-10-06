@@ -22,7 +22,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
@@ -35,6 +37,7 @@ public class AuthController {
 	@PostMapping("/register")
 	@ResponseStatus(HttpStatus.CREATED)
 	public RegisterResponse register(@Valid @RequestBody RegisterRequest request) {
+		log.info("Registration request received for username '{}'", request.getUsername());
 		AppUser user = userAccountService.register(
 				request.getUsername(),
 				request.getPassword(),
@@ -47,14 +50,18 @@ public class AuthController {
 	@PostMapping("/token")
 	public TokenResponse createToken(@Valid @RequestBody TokenRequest request) {
 		if (request.getPassword().getBytes(StandardCharsets.UTF_8).length > 72) {
+			log.warn("Token request rejected for username '{}': password too long", request.getUsername());
 			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid username or password");
 		}
 		try {
 			var authentication = authenticationManager.authenticate(
 					new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
+			log.info("Token issued for username '{}'", request.getUsername());
 			return jwtTokenService.createToken(authentication);
 		}
 		catch (AuthenticationException exception) {
+			log.warn("Authentication failed for username '{}': {}", request.getUsername(),
+					exception.getClass().getSimpleName());
 			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid username or password");
 		}
 	}

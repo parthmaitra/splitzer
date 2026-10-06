@@ -10,6 +10,7 @@ import com.pase.splitzer.model.UserSummary;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
@@ -29,12 +31,14 @@ public class UserController {
 
 	@GetMapping
 	public List<UserSummary> getUsers() {
+		log.debug("Listing all users");
 		return userAccountService.getUsers();
 	}
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
 	public RegisterResponse createUser(@Valid @RequestBody RegisterRequest request) {
+		log.info("Admin create-user request for username '{}'", request.getUsername());
 		AppUser user = userAccountService.register(
 				request.getUsername(),
 				request.getPassword(),
@@ -46,6 +50,7 @@ public class UserController {
 
 	@PutMapping("/{userId}/approve")
 	public UserSummary approveUser(@PathVariable Long userId) {
+		log.info("Approve request for user id {}", userId);
 		return userAccountService.approveUser(userId);
 	}
 }
